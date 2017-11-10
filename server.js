@@ -1,17 +1,52 @@
+var token;
 var http = require('http'),
-    httpProxy = require('http-proxy');
+    httpProxy = require('http-proxy'),
+    AWS = require('aws-sdk'),
+    fs = require('fs');
+
+// Silly string replace function
+function parse(str) {
+    var args = [].slice.call(arguments, 1),
+        i = 0;
+
+    return str.replace(/%s/g, function() {
+        return args[i++];
+    });
+}
+
+function setToken(e, d) {
+    if (e) console.log(e, e.stack);
+    else token = d;
+}
+
+function renewToken() {
+    
+}
+
+
+
+//
+// Read configuration file
+//
+var conf_raw = fs.readFileSync('conf.json');
+var conf_json = JSON.parse(conf_raw);
+
+var params = {};
+var ecr = new AWS.ECR({"region":"us-east-1"});
+ecr.getAuthorizationToken(params, setToken );
+
+setInterval(function(){console.log(token);},2000)
 
 //
 // Create a proxy server with custom application logic
 //
 var proxy = httpProxy.createProxyServer({
     secure:false,
-    auth: "AWS:eyJwYXlsb2FkIjoiK3dPR2RWRkEwMEZhOGo5TlRlUHlwVWE1RkZMY0lHS3FKbVhiUmVrYThodjBHdFVCODltOVdRWHpWcldienRzcmJEOE0rK2JCK2VKbk9GZFo2MThLMlFrNnBQNlZDZU0yRXNUOVBVdE5aSGsrRk1vUk5pcVZUTjQzWURia0hlWStWZEZFZTg2R1VlblNvbmFBa25QZGNxTVBWMHBVQXpkWjFIei9RU0Y5NmdDM09HTExFVVROSXJNOGEwQS9LZmxjVFpDSmhTNWk0VG1abjgyQldWWjE0SEVEMmk4M3Z3eGlYb3ptdWNpOVVTNVlMSkZqNWU5WmJiaVRsTCtRcjJSeHhCVU4zOFRjV2pNMWtCR1lkTGhnRDdZemxqNjFUMG44NEZvQjAzRi9LeTlXM0g0Nk0vRndOYVQ0ZmRDVU85TGdvSXhmMGRjNndXSDBkUDE5cTFJeDM0NWQxMCtaZFRDbzRvQTdVa1ZKM21qalJjZktRaWE3aVdMbzFNSElYV2M2Y0ZGK1FoT09SZ3hMSk9wNU5LMlE0dGJXUlJnNWVPTkU4Wi9rT0dtSmpOeEdIc2pMa3Fza3FDZHVDcmcvUW9MZlhCSlJ1bVRGL3FuR0pwdGE3UFFBSDhrUHhVL3AzTnprVWdkUEhpTXJuOWtLaXBGSVN5R29TdzlCYkRNdlVnaDJGTklqaXlVSEFLL01nV2tXb3YydjJ6N1YzSGhQUzRzbXg5bkJzSDB0bGN4RlNsNkx3NjZ0cG9QYVBPdThZMlpDcTQzWHZIaUN1TU1DNFV0RVRsMzlEWUxBbDEwSUJRZGJwRi82REhOWEFqaWtrczlEamc0KzRsRnVPWTdjMjFUQkxnMzNLWnEwbnZTam80ZTk4TkJGa1AzYlhaWG1jK09EOTVsN0xPOHNwLzdrK05aM1VBeW1YeUlQQkZadnI4ZHJnRXpkK1NObXY5OHhGcDRDMVZvRTkwVk5lNnBWM3JCemJ0ODBNQUxCM0NXRVZGNlJ3NWhmQmhzYVd6SE5QaFhMbjB4SjIrSC9DTy9mK2pIWDFoWFN5akJ4MEF5Tk0zellEN21YZzdDeWdFWThhK00wOHV6Ulp3TUJqa0lpR2xvQndGOHlIZ2tvLzNOd01oYnh6T2lSMlloVlNaZE1oV0lONk02UTlwTWFXMkxHQlNaK0dnMDBIY0QzY0FWWWUrM0orblZhQ3lEZkFERzBsQm5QalY3eUJBYkpJS2dSMlp0WkY1c1l5dVl1cGlNVWV1VGRDRDRPV1B1Qm9pbWdnMUM0ZlZKa21WVUhsSGZpeGJlYUFIb0gxU1R3K0hlK1dGWnlOZkJadG5UZjNtN2FGRGFEeFhNL2VUSktNQk91ZWl5Y0FwalFqeXg3SE9KNUUrbERoWGhTQmFrVmptdy9zcUFvMnp2aEE5ckQ5c0d5L2Qya1FvcTVhcGNoaS9qbEhQZ0pCcVU1UkxzUHp2ME5EUWNTZkJUTHRjcTVIOE50MHBETHZaK1ZWZ2NvdDJpSjM0bWpUbDAwL0VJQm93cjNHNk15ek5vdUl3US9CRkNiMjlkUmFPTFRwclhwQWd4NUtxNmtMdm4zdEpZZGcyNUtxUDlEL0FMQ0hSTHpLdDRYN0RYRDl1NHphV0hYZlEvcFp2Q2YvY2tIUXhTTkdaVGNkVFBwL08xcVBzTTVsNUo5Vm5CYWFWd0t3aEwzVnBGU3VyTkY2ajlzWEJzWk0zRnpVaVFOdVdXMmt4REhJVlBwYlpuaGxBL0hvdXNGM0dTMjRRPT0iLCJkYXRha2V5IjoiQVFFQkFIaHdtMFlhSVNKZVJ0Sm01bjFHNnVxZWVrWHVvWFhQZTVVRmNlOVJxOC8xNHdBQUFINHdmQVlKS29aSWh2Y05BUWNHb0c4d2JRSUJBREJvQmdrcWhraUc5dzBCQndFd0hnWUpZSVpJQVdVREJBRXVNQkVFREEzenlaVjVaNm5qd0pJekNnSUJFSUE3VW5zMm9ZbUhCWURwRVQ5NmlLbENqR2Vad0cveWx3WEV0aFk1bmxSNnlKaHlqNExjeXdxYVM0cEZ2M2VxK2lpUzBZbFA3NFRHWk1Dd1g0TT0iLCJ2ZXJzaW9uIjoiMiIsInR5cGUiOiJEQVRBX0tFWSIsImV4cGlyYXRpb24iOjE1MTAzMDkwMDR9"
 });
 
 proxy.on('proxyReq', function(proxyReq, req, res, options) {
-  proxyReq.setHeader('Host', '559139583778.dkr.ecr.us-east-1.amazonaws.com');
-  console.log(req.method, req.url);
+    proxyReq.setHeader('Host', conf_json.repo);
+    console.log(req.method, req.url);
 });
 
 //
@@ -22,7 +57,7 @@ proxy.on('proxyReq', function(proxyReq, req, res, options) {
 var server = http.createServer(function(req, res) {
   // You can define here your custom logic to handle the request
   // and then proxy the request.
-  proxy.web(req, res, { target: 'https://559139583778.dkr.ecr.us-east-1.amazonaws.com:443' });
+  proxy.web(req, res, { target: parse('https://%s:443', conf_json.repo) });
 });
 
 console.log("listening on port 5000")
