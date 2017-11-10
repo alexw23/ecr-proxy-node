@@ -1,8 +1,8 @@
-var token;
 var http = require('http'),
     httpProxy = require('http-proxy'),
     AWS = require('aws-sdk'),
-    fs = require('fs');
+    fs = require('fs'),
+    token;
 
 // Silly string replace function
 function parse(str) {
@@ -14,16 +14,22 @@ function parse(str) {
     });
 }
 
-function setToken(e, d) {
-    if (e) console.log(e, e.stack);
-    else token = d;
+// Sets the token needed for ECR access periodically, default every 6 hours,
+// retry failed tokens every 1 hour.
+function setToken() {
+    var params = {};
+    var ecr = new AWS.ECR({"region":"us-east-1"});
+    ecr.getAuthorizationToken(params, function(err,data){
+        if (err) {
+            console.log(err, err.stack)
+            setTimeout(setToken,3600000)
+        } else {
+            console.log("Token successfully acquired")
+            token = data
+            setTimeout(setToken,14400000)
+        }
+    });
 }
-
-function renewToken() {
-    
-}
-
-
 
 //
 // Read configuration file
@@ -31,11 +37,14 @@ function renewToken() {
 var conf_raw = fs.readFileSync('conf.json');
 var conf_json = JSON.parse(conf_raw);
 
-var params = {};
-var ecr = new AWS.ECR({"region":"us-east-1"});
-ecr.getAuthorizationToken(params, setToken );
+/*if ('retry_interval' in conf_json) {
+    retryInt = conf_json.retry_interval
+}
 
-setInterval(function(){console.log(token);},2000)
+if ('renew_interval' in conf_json) {
+    renewInt = conf_json.renew_interval
+}*/
+
 
 //
 // Create a proxy server with custom application logic
@@ -44,9 +53,12 @@ var proxy = httpProxy.createProxyServer({
     secure:false,
 });
 
+setToken()
+
 proxy.on('proxyReq', function(proxyReq, req, res, options) {
     proxyReq.setHeader('Host', conf_json.repo);
-    console.log(req.method, req.url);
+    proxyReq.setHeader('Authorization', "Basic " + token.authorizationData[0].authorizationToken);
+    console.log(req.connection.remoteAddress,req.method, req.url);
 });
 
 //
