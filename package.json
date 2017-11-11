@@ -1,0 +1,7 @@
+{
+  "description": "Proxy server for anonymizing requests to ECR Docker registry",
+  "dependencies": {
+    "aws-sdk": "2.149.0",
+    "http-proxy": "1.16.2"
+  }
+}

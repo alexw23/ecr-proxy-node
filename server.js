@@ -1,8 +1,10 @@
-var http = require('http'),
+var https = require('https'),
     httpProxy = require('http-proxy'),
     AWS = require('aws-sdk'),
     fs = require('fs'),
+    config = require('./config.js'),
     token;
+
 
 // Silly string replace function
 function parse(str) {
@@ -31,34 +33,47 @@ function setToken() {
     });
 }
 
-//
-// Read configuration file
-//
-var conf_raw = fs.readFileSync('conf.json');
-var conf_json = JSON.parse(conf_raw);
-
-/*if ('retry_interval' in conf_json) {
-    retryInt = conf_json.retry_interval
+function setOutLocation(loc){
+    var re = new RegExp(/observer.gizmonicus.org/,"g")
+    loc.replace(re,config.repo)
+    return loc
+}
+function setInLocation(loc){
+    var re = new RegExp(config.repo,"g")
+    loc.replace(re,"observer.gizmonicus.org")
+    return loc
 }
 
-if ('renew_interval' in conf_json) {
-    renewInt = conf_json.renew_interval
-}*/
-
+//
+//  Start by grabbing the token from AWS API
+//
+setToken()
 
 //
 // Create a proxy server with custom application logic
 //
+console.log("Starting proxy for", config.repo)
 var proxy = httpProxy.createProxyServer({
+    ssl: {
+        key: fs.readFileSync('server.key','utf-8'),
+        cert: fs.readFileSync('server.cert','utf-8')
+    },
+    target: parse('https://%s:443', config.repo),
     secure:false,
-});
+}).listen(5000);
 
-setToken()
 
 proxy.on('proxyReq', function(proxyReq, req, res, options) {
-    proxyReq.setHeader('Host', conf_json.repo);
+    proxyReq.setHeader('Host', config.repo);
     proxyReq.setHeader('Authorization', "Basic " + token.authorizationData[0].authorizationToken);
-    console.log(req.connection.remoteAddress,req.method, req.url);
+    //console.log(proxyReq.getHeader('Location'));
+});
+
+proxy.on('proxyRes', function(proxyRes,req,res){
+    var loc = String(proxyRes.headers.location)
+    var re = new RegExp(config.repo,"g")
+    var fixedloc = loc.replace(re,'observer.gizmonicus.org:5000')
+    proxyRes.headers.location = fixedloc
 });
 
 //
@@ -66,11 +81,18 @@ proxy.on('proxyReq', function(proxyReq, req, res, options) {
 // a web request to the target passed in the options
 // also you can use `proxy.ws()` to proxy a websockets request
 //
-var server = http.createServer(function(req, res) {
+//const opts = {
+    //ssl: {
+        //key: fs.readFileSync('server.key','utf-8'),
+        //cert: fs.readFileSync('server.cert','utf-8')
+    //}
+//};
+
+//var server = https.createServer(opts, function(req, res) {
   // You can define here your custom logic to handle the request
   // and then proxy the request.
-  proxy.web(req, res, { target: parse('https://%s:443', conf_json.repo) });
-});
+    //proxy.web(req, res, { target: parse('https://%s:443', config.repo) });
+//});
 
-console.log("listening on port 5000")
-server.listen(5000,'192.168.11.2');
+//console.log("listening on port 5000")
+//server.listen(5000,'127.0.0.1');
