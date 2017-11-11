@@ -3,6 +3,11 @@ var https = require('https'),
     AWS = require('aws-sdk'),
     fs = require('fs'),
     token;
+//
+// Read configuration file
+//
+var conf_raw = fs.readFileSync('conf.json');
+var conf_json = JSON.parse(conf_raw);
 
 // Silly string replace function
 function parse(str) {
@@ -31,11 +36,17 @@ function setToken() {
     });
 }
 
-//
-// Read configuration file
-//
-var conf_raw = fs.readFileSync('conf.json');
-var conf_json = JSON.parse(conf_raw);
+function setOutLocation(loc){
+    var re = new RegExp(/observer.gizmonicus.org/,"g")
+    loc.replace(re,conf_json.repo)
+    return loc
+}
+function setInLocation(loc){
+    var re = new RegExp(conf_json.repo,"g")
+    loc.replace(re,"observer.gizmonicus.org")
+    return loc
+}
+
 
 /*if ('retry_interval' in conf_json) {
     retryInt = conf_json.retry_interval
@@ -50,10 +61,10 @@ if ('renew_interval' in conf_json) {
 // Create a proxy server with custom application logic
 //
 var proxy = httpProxy.createProxyServer({
-    /*ssl: {
+    ssl: {
         key: fs.readFileSync('server.key','utf-8'),
         cert: fs.readFileSync('server.cert','utf-8')
-    },*/
+    },
     target: parse('https://%s:443', conf_json.repo),
     //target: 'https://156.154.64.10:443',
     secure:false,
@@ -65,16 +76,13 @@ setToken()
 proxy.on('proxyReq', function(proxyReq, req, res, options) {
     proxyReq.setHeader('Host', conf_json.repo);
     proxyReq.setHeader('Authorization', "Basic " + token.authorizationData[0].authorizationToken);
-    console.log(proxyReq.headers);
+    console.log(proxyReq.getHeader('Location'));
 });
 
 proxy.on('proxyRes', function(proxyRes,req,res){
     var loc = String(proxyRes.headers.location)
     var re = new RegExp(conf_json.repo,"g")
-    var fixedloc = loc.replace(re,'127.0.0.1:5000')
-    console.log("Current location: ",proxyRes.headers.location)
-    console.log(proxyRes.headers)
-    console.log("New location: ",fixedloc)
+    var fixedloc = loc.replace(re,'observer.gizmonicus.org:5000')
     proxyRes.headers.location = fixedloc
 });
 
