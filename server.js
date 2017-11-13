@@ -5,6 +5,12 @@ var https = require('https'),
     config = require('./config.js'),
     token;
 
+function dateprint() {
+    var now = new Date()
+    //var args = Array.prototype.slice.call(arguments)
+    var args = Array.from(arguments)
+    console.log(now,args.join(' '))
+}
 
 // Silly string replace function
 function parse(str) {
@@ -23,10 +29,10 @@ function setToken() {
     var ecr = new AWS.ECR({"region":"us-east-1"});
     ecr.getAuthorizationToken(params, function(err,data){
         if (err) {
-            console.log(err, err.stack)
+            dateprint(err, err.stack)
             setTimeout(setToken,3600000)
         } else {
-            console.log("Token successfully acquired")
+            dateprint("Token successfully acquired")
             token = data
             setTimeout(setToken,14400000)
         }
@@ -34,13 +40,13 @@ function setToken() {
 }
 
 function setOutLocation(loc){
-    var re = new RegExp(/observer.gizmonicus.org/,"g")
-    loc.replace(re,config.repo)
+    var re = new RegExp(config.localHost,"g")
+    loc.replace(re,config.remoteHost)
     return loc
 }
 function setInLocation(loc){
-    var re = new RegExp(config.repo,"g")
-    loc.replace(re,"observer.gizmonicus.org")
+    var re = new RegExp(config.remoteHost,"g")
+    loc.replace(re,config.localHost)
     return loc
 }
 
@@ -52,28 +58,27 @@ setToken()
 //
 // Create a proxy server with custom application logic
 //
-console.log("Starting proxy for", config.repo)
+dateprint("Starting proxy for", config.remoteHost)
 var proxy = httpProxy.createProxyServer({
     ssl: {
         key: fs.readFileSync('server.key','utf-8'),
         cert: fs.readFileSync('server.cert','utf-8')
     },
-    target: parse('https://%s:443', config.repo),
+    target: 'https://' + config.remoteHost + ":" + config.remotePort,
     secure:false,
-}).listen(5000);
+}).listen(config.localPort);
 
 
 proxy.on('proxyReq', function(proxyReq, req, res, options) {
-    proxyReq.setHeader('Host', config.repo);
+    proxyReq.setHeader('Host', config.remoteHost);
     proxyReq.setHeader('Authorization', "Basic " + token.authorizationData[0].authorizationToken);
-    //console.log(proxyReq.getHeader('Location'));
+    dateprint(req.connection.remoteAddress,req.method,req.url);
 });
 
 proxy.on('proxyRes', function(proxyRes,req,res){
     var loc = String(proxyRes.headers.location)
-    var re = new RegExp(config.repo,"g")
-    var fixedloc = loc.replace(re,'observer.gizmonicus.org:5000')
-    proxyRes.headers.location = fixedloc
+    var re = new RegExp(config.remoteHost,"g")
+    var fixedloc = loc.replace(re,config.localHost + ':' + config.localPort)
 });
 
 //
@@ -91,8 +96,8 @@ proxy.on('proxyRes', function(proxyRes,req,res){
 //var server = https.createServer(opts, function(req, res) {
   // You can define here your custom logic to handle the request
   // and then proxy the request.
-    //proxy.web(req, res, { target: parse('https://%s:443', config.repo) });
+    //proxy.web(req, res, { target: parse('https://%s:443', config.remoteHost) });
 //});
 
-//console.log("listening on port 5000")
-//server.listen(5000,'127.0.0.1');
+//console.log("listening on port config.localPort")
+//server.listen(config.localPort,'127.0.0.1');
