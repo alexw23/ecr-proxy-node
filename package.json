@@ -1,5 +1,16 @@
 {
+  "name": "ecr-proxy-node",
+  "version": "0.0.1",
+  "main":"server.js",
+  "license":"GPL-3.0",
   "description": "Proxy server for anonymizing requests to ECR Docker registry",
+  "keywords":[
+    "docker",
+    "ecr",
+    "aws",
+    "registry",
+    "proxy"
+  ],
   "dependencies": {
     "aws-sdk": "2.149.0",
     "http-proxy": "1.16.2"
