@@ -1,20 +1,10 @@
 var https = require('https');
-var winston = require('winston');
 var httpProxy = require('http-proxy');
 var AWS = require('aws-sdk');
 var fs = require('fs');
-var config = require('./config.js');
+var logger = require('./lib/logger.js');
+var config = require('./lib/config.js');
 var token;
-
-// Create a logger instance
-const logger = new winston.Logger({
-    transports: [
-        new winston.transports.Console({
-            level: 'debug',
-            timestamp: true
-        })
-    ]
-});
 
 // Silly string replace function
 function parse(str) {
@@ -33,7 +23,7 @@ function setToken() {
     var ecr = new AWS.ECR({"region":"us-east-1"});
     ecr.getAuthorizationToken(params, function(err,data){
         if (err) {
-            logger.error(err, err.stack)
+            logger.error(err.code + " - " + err.message)
             setTimeout(setToken,3600000)
         } else {
             logger.info("Token successfully acquired")
