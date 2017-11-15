@@ -33,14 +33,14 @@ function setToken() {
     });
 }
 
-//
+/*
+ *  Main program
+ */
+
 //  Start by grabbing the token from AWS API
-//
 setToken()
 
-//
 // Create a proxy server with custom application logic
-//
 logger.info("Starting proxy for", config.remoteHost + ":" + config.remotePort, "on", config.localHost + ":" + config.localPort)
 var proxy = httpProxy.createProxyServer({
     ssl: {
