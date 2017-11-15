@@ -1,3 +1,22 @@
+/*
+ *  This file is part of ecr-proxy-node
+ *
+ *  ecr-proxy-node is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  ecr-proxy-node is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ecr-proxy-node.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ *  Copyright (C) 2017 Will Tomlinson <watomlinson@gmail.com>
+ */
+
 var https = require('https');
 var httpProxy = require('http-proxy');
 var AWS = require('aws-sdk');
@@ -41,15 +60,24 @@ function setToken() {
 setToken()
 
 // Create a proxy server with custom application logic
+var options = {};
+if (config.useSsl == 'true'){
+    options = {
+        ssl: {
+            key: fs.readFileSync('server.key','utf-8'),
+            cert: fs.readFileSync('server.cert','utf-8')
+        },
+        target: 'https://' + config.remoteHost + ":" + config.remotePort,
+        secure:false,
+    }
+} else {
+    options = {
+        target: 'https://' + config.remoteHost + ":" + config.remotePort,
+        secure:false,
+    }
+}
 logger.info("Starting proxy for", config.remoteHost + ":" + config.remotePort, "on", config.localHost + ":" + config.localPort)
-var proxy = httpProxy.createProxyServer({
-    ssl: {
-        key: fs.readFileSync('server.key','utf-8'),
-        cert: fs.readFileSync('server.cert','utf-8')
-    },
-    target: 'https://' + config.remoteHost + ":" + config.remotePort,
-    secure:false,
-}).listen(config.localPort);
+var proxy = httpProxy.createProxyServer(options).listen(config.localPort);
 
 
 proxy.on('proxyReq', function(proxyReq, req, res, options) {

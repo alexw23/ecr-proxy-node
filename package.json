@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "main": "server.js",
   "license": "GPL-3.0",
-  "description": "Proxy server for anonymizing requests to ECR Docker registry",
+  "description": "Proxy server for anonymizing requests to ECR Docker registry. Do not trust this code. I don't know what I'm doing.",
   "keywords": [
     "docker",
     "ecr",
