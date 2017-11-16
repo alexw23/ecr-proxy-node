@@ -4,6 +4,12 @@ A proxy server that handles authentication to AWS ECR so your Docker hosts don't
 # Warning
 I wrote this in a very short period of time with little knowledge of NodeJS. Please do not just assume it is safe to use in a production environment, publicly exposed to the internet. At the very least you could be exposing your AWS credentials to the world. My intent is to provide a way for internal Docker clients to use an anonymous proxy so as to avoid authentication problems with ECR. Do not use it anywhere except in a controlled environment where you trust your Docker clients.
 
+# Installation
+Install using NPM or clone this repo.
+~~~~
+npm install @gizmonicus/ecr-proxy-node
+~~~~
+
 # Usage
 At a minimum you need the following:
 * AWS credentials - In any form that the SDK can read: environment variables, ~/.aws, instance profile, etc.
