@@ -1,5 +1,5 @@
 {
-  "name": "ecr-proxy-node",
+  "name": "@gizmonicus/ecr-proxy-node",
   "version": "0.1.0",
   "main": "server.js",
   "license": "GPL-3.0",
