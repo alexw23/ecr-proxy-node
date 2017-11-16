@@ -64,8 +64,8 @@ var options = {};
 if (config.useSsl == 'true'){
   options = {
     ssl: {
-      key: fs.readFileSync('server.key','utf-8'),
-      cert: fs.readFileSync('server.cert','utf-8')
+      key: fs.readFileSync(config.serverKey,'utf-8'),
+      cert: fs.readFileSync(config.serverCert,'utf-8')
     },
     target: 'https://' + config.remoteHost + ":" + config.remotePort,
     secure:false,

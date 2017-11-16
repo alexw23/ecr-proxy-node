@@ -1,6 +1,6 @@
 {
   "name": "@gizmonicus/ecr-proxy-node",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "server.js",
   "license": "GPL-3.0",
   "description": "Proxy server for anonymizing requests to ECR Docker registry. Do not trust this code. I don't know what I'm doing.",
